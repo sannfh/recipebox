@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\hassa\\\\Downloads\\\\RecipeBox\" -Recurse -Force | Where-Object { $_.FullName -notmatch '\\(\\\\.venv|\\\\.git|__pycache__|\\\\.ruff_cache|\\\\.mypy_cache|\\\\.pytest_cache\\)' } | Sort-Object FullName | Select-Object -ExpandProperty FullName)",
+      "Bash(Get-Content *)",
+      "Bash(uv run *)",
+      "mcp__ide__getDiagnostics",
+      "Bash(.venv\\\\Scripts\\\\ruff.exe check *)"
+    ]
+  }
+}
