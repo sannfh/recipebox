@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate
+from pydantic import EmailStr
+
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
 
 
 class RecipeRepository(ABC):
@@ -18,3 +20,14 @@ class RecipeRepository(ABC):
 
     @abstractmethod
     def delete(self, recipe_id: int) -> bool: ...
+
+
+class UserRepository(ABC):
+    @abstractmethod
+    def get_by_id(self, user_id: int) -> UserInDB | None: ...
+
+    @abstractmethod
+    def get_by_email(self, email: EmailStr) -> UserInDB | None: ...
+
+    @abstractmethod
+    def create(self, email: str, password_hash: str) -> UserInDB: ...

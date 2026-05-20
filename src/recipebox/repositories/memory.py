@@ -1,7 +1,9 @@
 from datetime import UTC, datetime
 
-from recipebox.domain.schemas import Recipe, RecipeCreate, RecipeUpdate
-from recipebox.repositories.base import RecipeRepository
+from pydantic import EmailStr
+
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
+from recipebox.repositories.base import RecipeRepository, UserRepository
 
 
 class InMemoryRecipeRepository(RecipeRepository):
@@ -12,8 +14,14 @@ class InMemoryRecipeRepository(RecipeRepository):
     def get(self, recipe_id: int) -> Recipe | None:
         return self._store.get(recipe_id)
 
-    def list(self) -> list[Recipe]:
-        return list(self._store.values())
+    def get_all(self, skip: int = 0, limit: int = 20) -> Page[Recipe]:
+        all_recipes = list(self._store.values())
+        return Page(
+            items=all_recipes[skip : skip + limit],
+            total=len(all_recipes),
+            skip=skip,
+            limit=limit,
+        )
 
     def create(self, data: RecipeCreate, owner_id: int) -> Recipe:
         now = datetime.now(UTC)
@@ -42,3 +50,27 @@ class InMemoryRecipeRepository(RecipeRepository):
             return False
         del self._store[recipe_id]
         return True
+
+
+class InMemoryUserRepository(UserRepository):
+    def __init__(self) -> None:
+        self._store: dict[int, UserInDB] = {}
+        self._next_id: int = 1
+
+    def get_by_id(self, user_id: int) -> UserInDB | None:
+        return self._store.get(user_id)
+
+    def get_by_email(self, email: EmailStr) -> UserInDB | None:
+        return next((u for u in self._store.values() if u.email == email), None)
+
+    def create(self, email: str, password_hash: str) -> UserInDB:
+        now = datetime.now(UTC)
+        user = UserInDB(
+            id=self._next_id,
+            email=email,
+            created_at=now,
+            hashed_password=password_hash,
+        )
+        self._store[self._next_id] = user
+        self._next_id += 1
+        return user
