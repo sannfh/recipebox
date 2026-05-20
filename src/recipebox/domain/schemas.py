@@ -1,8 +1,17 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator
+
+T = TypeVar("T")
+
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    skip: int
+    limit: int
 
 
 class Ingredient(BaseModel):

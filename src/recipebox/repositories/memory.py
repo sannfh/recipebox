@@ -12,7 +12,7 @@ class InMemoryRecipeRepository(RecipeRepository):
     def get(self, recipe_id: int) -> Recipe | None:
         return self._store.get(recipe_id)
 
-    def get_all(self) -> list[Recipe]:
+    def list(self) -> list[Recipe]:
         return list(self._store.values())
 
     def create(self, data: RecipeCreate, owner_id: int) -> Recipe:
