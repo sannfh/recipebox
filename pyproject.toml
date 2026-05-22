@@ -13,6 +13,8 @@ dependencies = [
     "pydantic[email]",
     "passlib[bcrypt]",
     "pyjwt",
+    "python-multipart",
+    "pwdlib[bcrypt]",
 ]
 
 [build-system]

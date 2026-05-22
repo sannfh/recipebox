@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from recipebox.core.security import decode_access_token
+from recipebox.domain.schemas import UserInDB
 from recipebox.repositories.base import RecipeRepository, UserRepository
 from recipebox.repositories.memory import InMemoryRecipeRepository, InMemoryUserRepository
 
@@ -22,8 +23,9 @@ def get_user_repo() -> UserRepository:
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], user_repo: Annotated[UserRepository, Depends(get_user_repo)]
-):
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user_repo: Annotated[UserRepository, Depends(get_user_repo)],
+) -> UserInDB:
     token_data = decode_access_token(token)
     if token_data is None or token_data.email is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)

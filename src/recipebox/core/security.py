@@ -2,11 +2,12 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 from pwdlib import PasswordHash
+from pwdlib.hashers.bcrypt import BcryptHasher
 from pydantic import BaseModel
 
 from recipebox.config import settings
 
-password_hasher = PasswordHash.recommended()
+password_hasher = PasswordHash((BcryptHasher(),))
 
 
 class Token(BaseModel):
