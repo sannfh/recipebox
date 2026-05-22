@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("APP_SECRET_KEY", "test-secret-key-not-for-production")
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 

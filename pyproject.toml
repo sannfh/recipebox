@@ -43,8 +43,8 @@ testpaths = ["tests"]
 [tool.pyright]
 include = ["src"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest",
     "pytest-asyncio",
     "ruff",
