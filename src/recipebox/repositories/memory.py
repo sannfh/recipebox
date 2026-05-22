@@ -11,10 +11,10 @@ class InMemoryRecipeRepository(RecipeRepository):
         self._store: dict[int, Recipe] = {}
         self._next_id: int = 1
 
-    def get(self, recipe_id: int) -> Recipe | None:
+    async def get(self, recipe_id: int) -> Recipe | None:
         return self._store.get(recipe_id)
 
-    def get_all(self, skip: int = 0, limit: int = 20) -> Page[Recipe]:
+    async def get_all(self, skip: int = 0, limit: int = 20) -> Page[Recipe]:
         all_recipes = list(self._store.values())
         return Page(
             items=all_recipes[skip : skip + limit],
@@ -23,7 +23,7 @@ class InMemoryRecipeRepository(RecipeRepository):
             limit=limit,
         )
 
-    def create(self, data: RecipeCreate, owner_id: int) -> Recipe:
+    async def create(self, data: RecipeCreate, owner_id: int) -> Recipe:
         now = datetime.now(UTC)
         recipe = Recipe(
             id=self._next_id,
@@ -36,7 +36,7 @@ class InMemoryRecipeRepository(RecipeRepository):
         self._next_id += 1
         return recipe
 
-    def update(self, recipe_id: int, data: RecipeUpdate) -> Recipe | None:
+    async def update(self, recipe_id: int, data: RecipeUpdate) -> Recipe | None:
         recipe = self._store.get(recipe_id)
         if recipe is None:
             return None
@@ -45,7 +45,7 @@ class InMemoryRecipeRepository(RecipeRepository):
         self._store[recipe_id] = updated
         return updated
 
-    def delete(self, recipe_id: int) -> bool:
+    async def delete(self, recipe_id: int) -> bool:
         if recipe_id not in self._store:
             return False
         del self._store[recipe_id]
@@ -57,13 +57,13 @@ class InMemoryUserRepository(UserRepository):
         self._store: dict[int, UserInDB] = {}
         self._next_id: int = 1
 
-    def get_by_id(self, user_id: int) -> UserInDB | None:
+    async def get_by_id(self, user_id: int) -> UserInDB | None:
         return self._store.get(user_id)
 
-    def get_by_email(self, email: EmailStr) -> UserInDB | None:
+    async def get_by_email(self, email: EmailStr) -> UserInDB | None:
         return next((u for u in self._store.values() if u.email == email), None)
 
-    def create(self, email: str, password_hash: str) -> UserInDB:
+    async def create(self, email: str, password_hash: str) -> UserInDB:
         now = datetime.now(UTC)
         user = UserInDB(
             id=self._next_id,
