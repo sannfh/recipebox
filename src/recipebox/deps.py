@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from recipebox.core.security import decode_access_token
 from recipebox.domain.schemas import UserInDB
+from recipebox.domain.services import RecipeService, UserService
 from recipebox.repositories.base import RecipeRepository, UserRepository
 from recipebox.repositories.memory import InMemoryRecipeRepository, InMemoryUserRepository
 
@@ -20,6 +21,14 @@ def get_recipe_repo() -> RecipeRepository:
 
 def get_user_repo() -> UserRepository:
     return _user_repo
+
+
+def get_user_service(repo: Annotated[UserRepository, Depends(get_user_repo)]) -> UserService:
+    return UserService(repo)
+
+
+def get_recipe_service(repo: Annotated[RecipeRepository, Depends(get_recipe_repo)]) -> RecipeService:
+    return RecipeService(repo)
 
 
 async def get_current_user(

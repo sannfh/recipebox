@@ -24,3 +24,7 @@ class DuplicateEmailError(ConflictError):
 
 class AuthenticationError(UnauthorizedError):
     pass
+
+
+class ForbiddenError(AppError):
+    pass

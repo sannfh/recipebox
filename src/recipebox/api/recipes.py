@@ -1,0 +1,56 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import Response
+
+from recipebox.deps import get_current_user, get_recipe_service
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
+from recipebox.domain.services import RecipeService
+
+router = APIRouter(prefix="/recipes", tags=["recipes"])
+
+
+@router.post("", response_model=Recipe, status_code=status.HTTP_201_CREATED)
+async def create_recipe(
+    body: RecipeCreate,
+    service: Annotated[RecipeService, Depends(get_recipe_service)],
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+) -> Recipe:
+    return await service.create(data=body, owner_id=current_user.id)
+
+
+@router.get("/{recipe_id}", response_model=Recipe)
+async def get_recipe(
+    recipe_id: int,
+    service: Annotated[RecipeService, Depends(get_recipe_service)],
+) -> Recipe:
+    return await service.get(recipe_id)
+
+
+@router.get("", response_model=Page[Recipe])
+async def list_recipes(
+    service: Annotated[RecipeService, Depends(get_recipe_service)],
+    skip: int = 0,
+    limit: int = 20,
+) -> Page[Recipe]:
+    return await service.list(skip=skip, limit=limit)
+
+
+@router.patch("/{recipe_id}", response_model=Recipe)
+async def update_recipe(
+    recipe_id: int,
+    body: RecipeUpdate,
+    service: Annotated[RecipeService, Depends(get_recipe_service)],
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+) -> Recipe:
+    return await service.update(recipe_id=recipe_id, data=body, current_user_id=current_user.id)
+
+
+@router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_recipe(
+    recipe_id: int,
+    service: Annotated[RecipeService, Depends(get_recipe_service)],
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+) -> Response:
+    await service.delete(recipe_id=recipe_id, current_user_id=current_user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
