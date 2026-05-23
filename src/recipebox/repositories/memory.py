@@ -1,8 +1,9 @@
+from collections import Counter
 from datetime import UTC, datetime
 
 from pydantic import EmailStr
 
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, TagCount, UserInDB
 from recipebox.repositories.base import RecipeRepository, UserRepository
 
 
@@ -50,6 +51,10 @@ class InMemoryRecipeRepository(RecipeRepository):
             return False
         del self._store[recipe_id]
         return True
+
+    async def get_tags(self) -> list[TagCount]:
+        counts = Counter(tag for recipe in self._store.values() for tag in recipe.tags)
+        return [TagCount(tag=tag, count=count) for tag, count in counts.most_common()]
 
 
 class InMemoryUserRepository(UserRepository):

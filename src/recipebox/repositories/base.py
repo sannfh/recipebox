@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from pydantic import EmailStr
 
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, TagCount, UserInDB
 
 
 class RecipeRepository(ABC):
@@ -20,6 +20,9 @@ class RecipeRepository(ABC):
 
     @abstractmethod
     async def delete(self, recipe_id: int) -> bool: ...
+
+    @abstractmethod
+    async def get_tags(self) -> list[TagCount]: ...
 
 
 class UserRepository(ABC):

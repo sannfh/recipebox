@@ -5,7 +5,7 @@ from recipebox.domain.errors import (
     ForbiddenError,
     RecipeNotFoundError,
 )
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, TagCount, UserInDB
 from recipebox.repositories.base import RecipeRepository, UserRepository
 
 
@@ -39,7 +39,7 @@ class RecipeService:
             raise RecipeNotFoundError(f"Recipe {recipe_id} not found")
         return recipe
 
-    async def list(self, skip: int, limit: int) -> Page[Recipe]:
+    async def get_all(self, skip: int, limit: int) -> Page[Recipe]:
         return await self._repo.get_all(skip=skip, limit=limit)
 
     async def update(self, recipe_id: int, data: RecipeUpdate, current_user_id: int) -> Recipe:
@@ -52,6 +52,9 @@ class RecipeService:
         if updated is None:
             raise RecipeNotFoundError(f"Recipe {recipe_id} not found")
         return updated
+
+    async def get_tags(self) -> list[TagCount]:
+        return await self._repo.get_tags()
 
     async def delete(self, recipe_id: int, current_user_id: int) -> None:
         recipe = await self._repo.get(recipe_id)

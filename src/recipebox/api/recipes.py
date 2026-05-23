@@ -33,7 +33,7 @@ async def list_recipes(
     skip: int = 0,
     limit: int = 20,
 ) -> Page[Recipe]:
-    return await service.list(skip=skip, limit=limit)
+    return await service.get_all(skip=skip, limit=limit)
 
 
 @router.patch("/{recipe_id}", response_model=Recipe)

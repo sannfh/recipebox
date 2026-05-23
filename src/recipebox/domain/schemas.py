@@ -86,6 +86,11 @@ class RecipeUpdate(BaseModel):
     source_url: str | None = None
 
 
+class TagCount(BaseModel):
+    tag: str
+    count: int
+
+
 class UserBase(BaseModel):
     email: EmailStr
 
