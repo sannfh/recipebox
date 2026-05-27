@@ -5,7 +5,12 @@
       "Bash(Get-Content *)",
       "Bash(uv run *)",
       "mcp__ide__getDiagnostics",
-      "Bash(.venv\\\\Scripts\\\\ruff.exe check *)"
+      "Bash(.venv\\\\Scripts\\\\ruff.exe check *)",
+      "Bash(uv add *)",
+      "Bash(uvx pyright *)",
+      "Bash(npx pyright *)",
+      "Bash(where pyright *)",
+      "Bash(git *)"
     ]
   }
 }

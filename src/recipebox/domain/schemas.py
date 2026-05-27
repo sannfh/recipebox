@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal, TypeVar
 
-from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator
+from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field, computed_field, field_validator
 
 T = TypeVar("T")
 
@@ -16,8 +16,8 @@ class Page[T](BaseModel):
 
 class Ingredient(BaseModel):
     name: str
-    amount: float
-    unit: str
+    amount: float = 0
+    unit: str = ""
 
 
 class NutritionInfo(BaseModel):
@@ -89,6 +89,10 @@ class RecipeUpdate(BaseModel):
 class TagCount(BaseModel):
     tag: str
     count: int
+
+
+class RecipeImport(BaseModel):
+    url: AnyHttpUrl
 
 
 class UserBase(BaseModel):

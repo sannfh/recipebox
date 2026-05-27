@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .api import auth, health, recipes, tags
-from .domain.errors import ConflictError, ForbiddenError, NotFoundError, UnauthorizedError
+from .domain.errors import ConflictError, ForbiddenError, NotFoundError, RecipeImportError, UnauthorizedError
 
 app = FastAPI()
 
@@ -30,3 +30,8 @@ async def unauthorized_handler(request: Request, exc: UnauthorizedError) -> JSON
 @app.exception_handler(ForbiddenError)
 async def forbidden_handler(request: Request, exc: ForbiddenError) -> JSONResponse:
     return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+
+@app.exception_handler(RecipeImportError)
+async def import_error_handler(request: Request, exc: RecipeImportError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(exc)})

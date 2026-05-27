@@ -28,3 +28,7 @@ class AuthenticationError(UnauthorizedError):
 
 class ForbiddenError(AppError):
     pass
+
+
+class RecipeImportError(AppError):
+    pass

@@ -3,8 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 
-from recipebox.deps import get_current_user, get_recipe_service
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, UserInDB
+from recipebox.core.importer import RecipeImporter
+from recipebox.deps import get_current_user, get_importer, get_recipe_service
+from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeImport, RecipeUpdate, UserInDB
 from recipebox.domain.services import RecipeService
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -17,6 +18,17 @@ async def create_recipe(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
 ) -> Recipe:
     return await service.create(data=body, owner_id=current_user.id)
+
+
+@router.post("/import", response_model=Recipe, status_code=status.HTTP_201_CREATED)
+async def import_recipe(
+    body: RecipeImport,
+    service: Annotated[RecipeService, Depends(get_recipe_service)],
+    importer: Annotated[RecipeImporter, Depends(get_importer)],
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+) -> Recipe:
+    recipe_data = await importer.extract(str(body.url))
+    return await service.create(data=recipe_data, owner_id=current_user.id)
 
 
 @router.get("/{recipe_id}", response_model=Recipe)

@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
+from recipebox.core.importer import RecipeImporter
 from recipebox.core.security import decode_access_token
 from recipebox.domain.schemas import UserInDB
 from recipebox.domain.services import RecipeService, UserService
@@ -29,6 +30,10 @@ def get_user_service(repo: Annotated[UserRepository, Depends(get_user_repo)]) ->
 
 def get_recipe_service(repo: Annotated[RecipeRepository, Depends(get_recipe_repo)]) -> RecipeService:
     return RecipeService(repo)
+
+
+def get_importer() -> RecipeImporter:
+    return RecipeImporter()
 
 
 async def get_current_user(
