@@ -67,7 +67,7 @@ class Recipe(RecipeBase):
     id: int  # unique identifier for the recipe, assigned by the database
     owner_id: int  # foreign key to the user who created the recipe
     created_at: datetime  # timestamp for when the recipe was created
-    updated_at: datetime  # timestamp for when the recipe was last updated
+    updated_at: datetime | None  # timestamp for when the recipe was last updated
 
 
 class RecipeUpdate(BaseModel):

@@ -3,25 +3,25 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
+from recipebox import database
 from recipebox.core.importer import RecipeImporter
 from recipebox.core.security import decode_access_token
 from recipebox.domain.schemas import UserInDB
 from recipebox.domain.services import RecipeService, UserService
 from recipebox.repositories.base import RecipeRepository, UserRepository
-from recipebox.repositories.memory import InMemoryRecipeRepository, InMemoryUserRepository
-
-_recipe_repo = InMemoryRecipeRepository()
-_user_repo = InMemoryUserRepository()
+from recipebox.repositories.postgres import PostgresRecipeRepository, PostgresUserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-def get_recipe_repo() -> RecipeRepository:
-    return _recipe_repo
+def get_recipe_repo() -> PostgresRecipeRepository:
+    assert database.pool is not None
+    return PostgresRecipeRepository(pool=database.pool)
 
 
 def get_user_repo() -> UserRepository:
-    return _user_repo
+    assert database.pool is not None
+    return PostgresUserRepository(pool=database.pool)
 
 
 def get_user_service(repo: Annotated[UserRepository, Depends(get_user_repo)]) -> UserService:

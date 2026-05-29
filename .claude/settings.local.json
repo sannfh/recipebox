@@ -10,7 +10,17 @@
       "Bash(uvx pyright *)",
       "Bash(npx pyright *)",
       "Bash(where pyright *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "WebSearch",
+      "WebFetch(domain:job-boards.greenhouse.io)",
+      "WebFetch(domain:openai.com)",
+      "WebFetch(domain:python.plainenglish.io)",
+      "WebFetch(domain:www.marktechpost.com)",
+      "WebFetch(domain:www.confident-ai.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:langfuse.com)",
+      "WebFetch(domain:hamel.dev)",
+      "WebFetch(domain:www.deeplearning.ai)"
     ]
   }
 }

@@ -7,4 +7,6 @@ dist/
 *.egg-info/
 .ruff_cache/
 .vscode/
+resources/
+memory/
 CONTEXT.md
