@@ -1,10 +1,22 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
+from recipebox.database import close_pool, init_pool
 
 from .api import auth, health, recipes, tags
 from .domain.errors import ConflictError, ForbiddenError, NotFoundError, RecipeImportError, UnauthorizedError
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_pool()
+    yield
+    await close_pool()
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(health.router)
 app.include_router(auth.router)
