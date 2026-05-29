@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     debug: bool = False
     access_token_expire_minutes: int = 30
     algorithm: str = "HS256"
-    database_url: str
+    database_url: str = ""
 
 
 settings = Settings()  # type: ignore[call-arg]
