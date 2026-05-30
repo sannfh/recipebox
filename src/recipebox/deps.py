@@ -17,6 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 async def get_session():
+    assert SessionLocal is not None, "Database not configured"
     async with SessionLocal() as session:
         yield session
 
