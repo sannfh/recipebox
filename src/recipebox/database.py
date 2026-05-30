@@ -1,15 +1,8 @@
-import asyncpg
+# database.py
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .config import settings
 
-pool: asyncpg.Pool | None = None
-
-
-async def init_pool():
-    global pool
-    pool = await asyncpg.create_pool(settings.database_url)
-
-
-async def close_pool():
-    if pool is not None:
-        await pool.close()
+engine = create_async_engine(settings.database_url, echo=True)
+SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
