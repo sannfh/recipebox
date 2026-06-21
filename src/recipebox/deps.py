@@ -4,12 +4,23 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from recipebox.core.embeddings import Embedder, OpenAIEmbedder
 from recipebox.core.importer import RecipeImporter
 from recipebox.core.security import decode_access_token
 from recipebox.domain.schemas import UserInDB
-from recipebox.domain.services import PantryService, RecipeService, UserService
-from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
-from recipebox.repositories.postgres import PostgresPantryRepository, PostgresRecipeRepository, PostgresUserRepository
+from recipebox.domain.services import PantryService, RecipeSearchService, RecipeService, UserService
+from recipebox.repositories.base import (
+    PantryRepository,
+    RecipeRepository,
+    ReferenceRecipeRepository,
+    UserRepository,
+)
+from recipebox.repositories.postgres import (
+    PostgresPantryRepository,
+    PostgresRecipeRepository,
+    PostgresReferenceRecipeRepository,
+    PostgresUserRepository,
+)
 
 from .database import SessionLocal
 
@@ -44,6 +55,23 @@ def get_pantry_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> P
 
 def get_pantry_service(repo: Annotated[PantryRepository, Depends(get_pantry_repo)]) -> PantryService:
     return PantryService(repo)
+
+
+def get_reference_recipe_repo(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> PostgresReferenceRecipeRepository:
+    return PostgresReferenceRecipeRepository(session=session)
+
+
+def get_embedder() -> Embedder:
+    return OpenAIEmbedder()
+
+
+def get_recipe_search_service(
+    repo: Annotated[ReferenceRecipeRepository, Depends(get_reference_recipe_repo)],
+    embedder: Annotated[Embedder, Depends(get_embedder)],
+) -> RecipeSearchService:
+    return RecipeSearchService(repo=repo, embedder=embedder)
 
 
 def get_importer() -> RecipeImporter:

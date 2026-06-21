@@ -1,3 +1,4 @@
+from recipebox.core.embeddings import Embedder
 from recipebox.core.security import hash_password, verify_password
 from recipebox.domain.errors import (
     AuthenticationError,
@@ -15,10 +16,16 @@ from recipebox.domain.schemas import (
     Recipe,
     RecipeCreate,
     RecipeUpdate,
+    ReferenceRecipeHit,
     TagCount,
     UserInDB,
 )
-from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
+from recipebox.repositories.base import (
+    PantryRepository,
+    RecipeRepository,
+    ReferenceRecipeRepository,
+    UserRepository,
+)
 
 
 class UserService:
@@ -108,3 +115,15 @@ class PantryService:
         if item.user_id != current_user_id:
             raise ForbiddenError("You do not own this pantry item")
         await self._repo.delete(item_id)
+
+
+class RecipeSearchService:
+    """Embeds a free-text query and returns top-k matches from the reference corpus."""
+
+    def __init__(self, repo: ReferenceRecipeRepository, embedder: Embedder) -> None:
+        self._repo = repo
+        self._embedder = embedder
+
+    async def search(self, query: str, top_k: int = 5) -> list[ReferenceRecipeHit]:
+        vec = await self._embedder.embed(query)
+        return await self._repo.search_by_vector(query_vec=vec, top_k=top_k)

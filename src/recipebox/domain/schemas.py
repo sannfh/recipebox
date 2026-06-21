@@ -95,6 +95,18 @@ class RecipeImport(BaseModel):
     url: AnyHttpUrl
 
 
+class ReferenceRecipeHit(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    url: str
+    source_site: str | None
+    cuisine: str | None
+    category: str | None
+    image_url: str | None
+    score: float  # cosine similarity, 1.0 = identical
+
+
 class PantryItemBase(BaseModel):
     name: str
     quantity: float = Field(ge=0)

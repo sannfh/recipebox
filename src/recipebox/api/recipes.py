@@ -4,9 +4,17 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 
 from recipebox.core.importer import RecipeImporter
-from recipebox.deps import get_current_user, get_importer, get_recipe_service
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeImport, RecipeUpdate, UserInDB
-from recipebox.domain.services import RecipeService
+from recipebox.deps import get_current_user, get_importer, get_recipe_search_service, get_recipe_service
+from recipebox.domain.schemas import (
+    Page,
+    Recipe,
+    RecipeCreate,
+    RecipeImport,
+    RecipeUpdate,
+    ReferenceRecipeHit,
+    UserInDB,
+)
+from recipebox.domain.services import RecipeSearchService, RecipeService
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -29,6 +37,15 @@ async def import_recipe(
 ) -> Recipe:
     recipe_data = await importer.extract(str(body.url))
     return await service.create(data=recipe_data, owner_id=current_user.id)
+
+
+@router.get("/search", response_model=list[ReferenceRecipeHit])
+async def search_recipes(
+    service: Annotated[RecipeSearchService, Depends(get_recipe_search_service)],
+    q: str,
+    top_k: int = 5,
+) -> list[ReferenceRecipeHit]:
+    return await service.search(query=q, top_k=top_k)
 
 
 @router.get("/{recipe_id}", response_model=Recipe)

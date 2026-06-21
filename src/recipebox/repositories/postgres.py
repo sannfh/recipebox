@@ -13,13 +13,20 @@ from recipebox.domain.schemas import (
     Recipe,
     RecipeCreate,
     RecipeUpdate,
+    ReferenceRecipeHit,
     TagCount,
     UserInDB,
 )
 from recipebox.models import PantryItem as PantryItemModel
 from recipebox.models import Recipe as RecipeModel
+from recipebox.models import ReferenceRecipe as ReferenceRecipeModel
 from recipebox.models import User as UserModel
-from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
+from recipebox.repositories.base import (
+    PantryRepository,
+    RecipeRepository,
+    ReferenceRecipeRepository,
+    UserRepository,
+)
 
 
 class PostgresUserRepository(UserRepository):
@@ -201,3 +208,36 @@ class PostgresPantryRepository(PantryRepository):
         await self.session.delete(item)
         await self.session.commit()
         return True
+
+
+class PostgresReferenceRecipeRepository(ReferenceRecipeRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def search_by_vector(self, query_vec: list[float], top_k: int) -> list[ReferenceRecipeHit]:
+        # pgvector's <=> operator is cosine distance: 0 = identical, 2 = opposite.
+        # We expose 1 - distance as a similarity score so larger = more relevant.
+        distance = ReferenceRecipeModel.embedding.cosine_distance(query_vec).label("distance")  # type: ignore[union-attr]
+        stmt = (
+            select(ReferenceRecipeModel, distance)
+            .where(ReferenceRecipeModel.embedding.is_not(None))  # type: ignore[union-attr]
+            .order_by(distance)
+            .limit(top_k)
+        )
+        result = await self.session.execute(stmt)
+        hits: list[ReferenceRecipeHit] = []
+        for row, dist in result.all():
+            hits.append(
+                ReferenceRecipeHit(
+                    id=row.id,
+                    title=row.title,
+                    description=row.description,
+                    url=row.url,
+                    source_site=row.source_site,
+                    cuisine=row.cuisine,
+                    category=row.category,
+                    image_url=row.image_url,
+                    score=1.0 - float(dist),
+                )
+            )
+        return hits

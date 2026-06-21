@@ -1,3 +1,4 @@
+import math
 from collections import Counter
 from datetime import UTC, datetime
 
@@ -11,10 +12,16 @@ from recipebox.domain.schemas import (
     Recipe,
     RecipeCreate,
     RecipeUpdate,
+    ReferenceRecipeHit,
     TagCount,
     UserInDB,
 )
-from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
+from recipebox.repositories.base import (
+    PantryRepository,
+    RecipeRepository,
+    ReferenceRecipeRepository,
+    UserRepository,
+)
 
 
 class InMemoryRecipeRepository(RecipeRepository):
@@ -133,3 +140,25 @@ class InMemoryPantryRepository(PantryRepository):
             return False
         del self._store[item_id]
         return True
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
+    return dot / (na * nb) if na and nb else 0.0
+
+
+class InMemoryReferenceRecipeRepository(ReferenceRecipeRepository):
+    """Test double — store full hit + vector together, sort by cosine."""
+
+    def __init__(self) -> None:
+        self._store: list[tuple[ReferenceRecipeHit, list[float]]] = []
+
+    def add(self, hit: ReferenceRecipeHit, vector: list[float]) -> None:
+        self._store.append((hit, vector))
+
+    async def search_by_vector(self, query_vec: list[float], top_k: int) -> list[ReferenceRecipeHit]:
+        scored = [(hit.model_copy(update={"score": _cosine(query_vec, vec)}), vec) for hit, vec in self._store]
+        scored.sort(key=lambda pair: pair[0].score, reverse=True)
+        return [hit for hit, _ in scored[:top_k]]

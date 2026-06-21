@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     environment:
       POSTGRES_DB: recipebox
       POSTGRES_USER: recipebox_user
@@ -22,6 +22,7 @@ services:
     environment:
       APP_DATABASE_URL: postgresql+asyncpg://recipebox_user:${DB_PASSWORD}@db/recipebox
       APP_SECRET_KEY: ${APP_SECRET_KEY}
+      APP_OPENAI_API_KEY: ${APP_OPENAI_API_KEY}
     depends_on:
       db:
         condition: service_healthy

@@ -2,9 +2,12 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, Numeric, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import Field, SQLModel
+
+EMBEDDING_DIM = 1536
 
 
 class User(SQLModel, table=True):
@@ -56,6 +59,7 @@ class ReferenceRecipe(SQLModel, table=True):
     category: str | None = None
     servings: str | None = None
     image_url: str | None = None
+    embedding: list[float] | None = Field(default=None, sa_column=Column(Vector(EMBEDDING_DIM), nullable=True))
 
 
 class PantryItem(SQLModel, table=True):
