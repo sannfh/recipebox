@@ -19,7 +19,6 @@ from recipebox.domain.schemas import (
 )
 from recipebox.models import PantryItem as PantryItemModel
 from recipebox.models import Recipe as RecipeModel
-from recipebox.models import ReferenceRecipe as ReferenceRecipeModel
 from recipebox.models import User as UserModel
 from recipebox.repositories.base import (
     PantryRepository,
@@ -216,28 +215,31 @@ class PostgresReferenceRecipeRepository(ReferenceRecipeRepository):
 
     async def search_by_vector(self, query_vec: list[float], top_k: int) -> list[ReferenceRecipeHit]:
         # pgvector's <=> operator is cosine distance: 0 = identical, 2 = opposite.
-        # We expose 1 - distance as a similarity score so larger = more relevant.
-        distance = ReferenceRecipeModel.embedding.cosine_distance(query_vec).label("distance")  # type: ignore[union-attr]
-        stmt = (
-            select(ReferenceRecipeModel, distance)
-            .where(ReferenceRecipeModel.embedding.is_not(None))  # type: ignore[union-attr]
-            .order_by(distance)
-            .limit(top_k)
+        # Raw SQL avoids the untyped pgvector ORM column expressions and matches
+        # the get_tags() pattern in this file. Score = 1 - distance so larger = more relevant.
+        vec_literal = "[" + ",".join(repr(x) for x in query_vec) + "]"
+        sql = text(
+            "SELECT id, title, description, url, source_site, cuisine, category, image_url, "
+            "1 - (embedding <=> CAST(:vec AS vector)) AS score "
+            "FROM reference_recipes WHERE embedding IS NOT NULL "
+            "ORDER BY embedding <=> CAST(:vec AS vector) LIMIT :k"
         )
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(  # type: ignore[arg-type]
+            sql, {"vec": vec_literal, "k": top_k}
+        )
         hits: list[ReferenceRecipeHit] = []
-        for row, dist in result.all():
+        for row in result.all():
             hits.append(
                 ReferenceRecipeHit(
-                    id=row.id,
-                    title=row.title,
-                    description=row.description,
-                    url=row.url,
-                    source_site=row.source_site,
-                    cuisine=row.cuisine,
-                    category=row.category,
-                    image_url=row.image_url,
-                    score=1.0 - float(dist),
+                    id=row[0],
+                    title=row[1],
+                    description=row[2],
+                    url=row[3],
+                    source_site=row[4],
+                    cuisine=row[5],
+                    category=row[6],
+                    image_url=row[7],
+                    score=float(row[8]),
                 )
             )
         return hits
