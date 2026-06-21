@@ -42,6 +42,22 @@ class Recipe(SQLModel, table=True):
     source_url: str | None = None
 
 
+class ReferenceRecipe(SQLModel, table=True):
+    __tablename__ = "reference_recipes"  # type: ignore[assignment]
+
+    id: int | None = Field(default=None, primary_key=True)
+    title: str
+    description: str | None = None
+    ingredients: list[str] = Field(sa_column=Column(JSON, nullable=False))
+    instructions: list[str] = Field(sa_column=Column(JSON, nullable=False))
+    url: str
+    source_site: str | None = None
+    cuisine: str | None = None
+    category: str | None = None
+    servings: str | None = None
+    image_url: str | None = None
+
+
 class PantryItem(SQLModel, table=True):
     __tablename__ = "pantry_items"  # type: ignore[assignment]
     __table_args__ = (UniqueConstraint("user_id", "name", name="uq_pantry_user_name"),)
