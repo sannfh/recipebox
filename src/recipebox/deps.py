@@ -7,9 +7,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from recipebox.core.importer import RecipeImporter
 from recipebox.core.security import decode_access_token
 from recipebox.domain.schemas import UserInDB
-from recipebox.domain.services import RecipeService, UserService
-from recipebox.repositories.base import RecipeRepository, UserRepository
-from recipebox.repositories.postgres import PostgresRecipeRepository, PostgresUserRepository
+from recipebox.domain.services import PantryService, RecipeService, UserService
+from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
+from recipebox.repositories.postgres import PostgresPantryRepository, PostgresRecipeRepository, PostgresUserRepository
 
 from .database import SessionLocal
 
@@ -36,6 +36,14 @@ def get_user_service(repo: Annotated[UserRepository, Depends(get_user_repo)]) ->
 
 def get_recipe_service(repo: Annotated[RecipeRepository, Depends(get_recipe_repo)]) -> RecipeService:
     return RecipeService(repo)
+
+
+def get_pantry_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> PostgresPantryRepository:
+    return PostgresPantryRepository(session=session)
+
+
+def get_pantry_service(repo: Annotated[PantryRepository, Depends(get_pantry_repo)]) -> PantryService:
+    return PantryService(repo)
 
 
 def get_importer() -> RecipeImporter:

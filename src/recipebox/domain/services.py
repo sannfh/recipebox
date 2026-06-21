@@ -2,11 +2,23 @@ from recipebox.core.security import hash_password, verify_password
 from recipebox.domain.errors import (
     AuthenticationError,
     DuplicateEmailError,
+    DuplicatePantryItemError,
     ForbiddenError,
+    PantryItemNotFoundError,
     RecipeNotFoundError,
 )
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, TagCount, UserInDB
-from recipebox.repositories.base import RecipeRepository, UserRepository
+from recipebox.domain.schemas import (
+    Page,
+    PantryItem,
+    PantryItemCreate,
+    PantryItemUpdate,
+    Recipe,
+    RecipeCreate,
+    RecipeUpdate,
+    TagCount,
+    UserInDB,
+)
+from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
 
 
 class UserService:
@@ -63,3 +75,36 @@ class RecipeService:
         if recipe.owner_id != current_user_id:
             raise ForbiddenError("You do not own this recipe")
         await self._repo.delete(recipe_id)
+
+
+class PantryService:
+    def __init__(self, repo: PantryRepository) -> None:
+        self._repo = repo
+
+    async def list(self, user_id: int) -> list[PantryItem]:
+        return await self._repo.list_for_user(user_id)
+
+    async def add(self, user_id: int, data: PantryItemCreate) -> PantryItem:
+        existing = await self._repo.get_by_name(user_id, data.name)
+        if existing is not None:
+            raise DuplicatePantryItemError(f"Pantry already contains '{data.name}' — update its quantity instead")
+        return await self._repo.create(user_id=user_id, data=data)
+
+    async def update(self, item_id: int, current_user_id: int, data: PantryItemUpdate) -> PantryItem:
+        item = await self._repo.get(item_id)
+        if item is None:
+            raise PantryItemNotFoundError(f"Pantry item {item_id} not found")
+        if item.user_id != current_user_id:
+            raise ForbiddenError("You do not own this pantry item")
+        updated = await self._repo.update(item_id, data)
+        if updated is None:
+            raise PantryItemNotFoundError(f"Pantry item {item_id} not found")
+        return updated
+
+    async def delete(self, item_id: int, current_user_id: int) -> None:
+        item = await self._repo.get(item_id)
+        if item is None:
+            raise PantryItemNotFoundError(f"Pantry item {item_id} not found")
+        if item.user_id != current_user_id:
+            raise ForbiddenError("You do not own this pantry item")
+        await self._repo.delete(item_id)

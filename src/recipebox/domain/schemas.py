@@ -95,6 +95,32 @@ class RecipeImport(BaseModel):
     url: AnyHttpUrl
 
 
+class PantryItemBase(BaseModel):
+    name: str
+    quantity: float = Field(ge=0)
+    unit: str = ""
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: str) -> str:
+        return v.lower().strip()
+
+
+class PantryItemCreate(PantryItemBase):
+    pass
+
+
+class PantryItemUpdate(BaseModel):
+    quantity: float | None = Field(default=None, ge=0)
+    unit: str | None = None
+
+
+class PantryItem(PantryItemBase):
+    id: int
+    user_id: int
+    added_at: datetime
+
+
 class UserBase(BaseModel):
     email: EmailStr
 

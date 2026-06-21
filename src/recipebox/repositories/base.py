@@ -2,7 +2,17 @@ from abc import ABC, abstractmethod
 
 from pydantic import EmailStr
 
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, TagCount, UserInDB
+from recipebox.domain.schemas import (
+    Page,
+    PantryItem,
+    PantryItemCreate,
+    PantryItemUpdate,
+    Recipe,
+    RecipeCreate,
+    RecipeUpdate,
+    TagCount,
+    UserInDB,
+)
 
 
 class RecipeRepository(ABC):
@@ -34,3 +44,23 @@ class UserRepository(ABC):
 
     @abstractmethod
     async def create(self, email: str, password_hash: str) -> UserInDB: ...
+
+
+class PantryRepository(ABC):
+    @abstractmethod
+    async def list_for_user(self, user_id: int) -> list[PantryItem]: ...
+
+    @abstractmethod
+    async def get(self, item_id: int) -> PantryItem | None: ...
+
+    @abstractmethod
+    async def get_by_name(self, user_id: int, name: str) -> PantryItem | None: ...
+
+    @abstractmethod
+    async def create(self, user_id: int, data: PantryItemCreate) -> PantryItem: ...
+
+    @abstractmethod
+    async def update(self, item_id: int, data: PantryItemUpdate) -> PantryItem | None: ...
+
+    @abstractmethod
+    async def delete(self, item_id: int) -> bool: ...

@@ -3,8 +3,18 @@ from datetime import UTC, datetime
 
 from pydantic import EmailStr
 
-from recipebox.domain.schemas import Page, Recipe, RecipeCreate, RecipeUpdate, TagCount, UserInDB
-from recipebox.repositories.base import RecipeRepository, UserRepository
+from recipebox.domain.schemas import (
+    Page,
+    PantryItem,
+    PantryItemCreate,
+    PantryItemUpdate,
+    Recipe,
+    RecipeCreate,
+    RecipeUpdate,
+    TagCount,
+    UserInDB,
+)
+from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
 
 
 class InMemoryRecipeRepository(RecipeRepository):
@@ -79,3 +89,47 @@ class InMemoryUserRepository(UserRepository):
         self._store[self._next_id] = user
         self._next_id += 1
         return user
+
+
+class InMemoryPantryRepository(PantryRepository):
+    def __init__(self) -> None:
+        self._store: dict[int, PantryItem] = {}
+        self._next_id: int = 1
+
+    async def list_for_user(self, user_id: int) -> list[PantryItem]:
+        return [item for item in self._store.values() if item.user_id == user_id]
+
+    async def get(self, item_id: int) -> PantryItem | None:
+        return self._store.get(item_id)
+
+    async def get_by_name(self, user_id: int, name: str) -> PantryItem | None:
+        return next(
+            (item for item in self._store.values() if item.user_id == user_id and item.name == name),
+            None,
+        )
+
+    async def create(self, user_id: int, data: PantryItemCreate) -> PantryItem:
+        item = PantryItem(
+            id=self._next_id,
+            user_id=user_id,
+            added_at=datetime.now(UTC),
+            **data.model_dump(),
+        )
+        self._store[self._next_id] = item
+        self._next_id += 1
+        return item
+
+    async def update(self, item_id: int, data: PantryItemUpdate) -> PantryItem | None:
+        item = self._store.get(item_id)
+        if item is None:
+            return None
+        updates = {k: v for k, v in data.model_dump().items() if v is not None}
+        updated = item.model_copy(update=updates)
+        self._store[item_id] = updated
+        return updated
+
+    async def delete(self, item_id: int) -> bool:
+        if item_id not in self._store:
+            return False
+        del self._store[item_id]
+        return True

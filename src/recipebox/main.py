@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from .api import auth, health, recipes, tags
+from .api import auth, health, pantry, recipes, tags
 from .domain.errors import ConflictError, ForbiddenError, NotFoundError, RecipeImportError, UnauthorizedError
 
 
@@ -18,6 +18,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(recipes.router)
 app.include_router(tags.router)
+app.include_router(pantry.router)
 
 
 @app.exception_handler(NotFoundError)

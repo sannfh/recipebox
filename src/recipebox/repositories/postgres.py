@@ -7,15 +7,19 @@ from recipebox.domain.schemas import (
     Ingredient,
     NutritionInfo,
     Page,
+    PantryItem,
+    PantryItemCreate,
+    PantryItemUpdate,
     Recipe,
     RecipeCreate,
     RecipeUpdate,
     TagCount,
     UserInDB,
 )
+from recipebox.models import PantryItem as PantryItemModel
 from recipebox.models import Recipe as RecipeModel
 from recipebox.models import User as UserModel
-from recipebox.repositories.base import RecipeRepository, UserRepository
+from recipebox.repositories.base import PantryRepository, RecipeRepository, UserRepository
 
 
 class PostgresUserRepository(UserRepository):
@@ -137,3 +141,63 @@ class PostgresRecipeRepository(RecipeRepository):
             text("SELECT unnest(tags) AS tag, COUNT(*) AS count FROM recipes GROUP BY tag ORDER BY count DESC")
         )
         return [TagCount(tag=tag, count=count) for tag, count in result.all()]
+
+
+class PostgresPantryRepository(PantryRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    def _to_schema(self, item: PantryItemModel) -> PantryItem:
+        assert item.id is not None and item.added_at is not None
+        return PantryItem(
+            id=item.id,
+            user_id=item.user_id,
+            name=item.name,
+            quantity=item.quantity,
+            unit=item.unit,
+            added_at=item.added_at,
+        )
+
+    async def list_for_user(self, user_id: int) -> list[PantryItem]:
+        result = await self.session.exec(
+            select(PantryItemModel).where(PantryItemModel.user_id == user_id).order_by(col(PantryItemModel.name))
+        )
+        return [self._to_schema(item) for item in result.all()]
+
+    async def get(self, item_id: int) -> PantryItem | None:
+        item = await self.session.get(PantryItemModel, item_id)
+        return self._to_schema(item) if item else None
+
+    async def get_by_name(self, user_id: int, name: str) -> PantryItem | None:
+        result = await self.session.exec(
+            select(PantryItemModel).where(PantryItemModel.user_id == user_id, PantryItemModel.name == name)
+        )
+        item = result.first()
+        return self._to_schema(item) if item else None
+
+    async def create(self, user_id: int, data: PantryItemCreate) -> PantryItem:
+        item = PantryItemModel(user_id=user_id, **data.model_dump())
+        self.session.add(item)
+        await self.session.commit()
+        await self.session.refresh(item)
+        return self._to_schema(item)
+
+    async def update(self, item_id: int, data: PantryItemUpdate) -> PantryItem | None:
+        item = await self.session.get(PantryItemModel, item_id)
+        if item is None:
+            return None
+        for field, value in data.model_dump(exclude_unset=True).items():
+            if value is not None:
+                setattr(item, field, value)
+        self.session.add(item)
+        await self.session.commit()
+        await self.session.refresh(item)
+        return self._to_schema(item)
+
+    async def delete(self, item_id: int) -> bool:
+        item = await self.session.get(PantryItemModel, item_id)
+        if item is None:
+            return False
+        await self.session.delete(item)
+        await self.session.commit()
+        return True

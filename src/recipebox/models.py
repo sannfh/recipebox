@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, Numeric, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import Field, SQLModel
 
@@ -40,3 +40,17 @@ class Recipe(SQLModel, table=True):
     cost_per_serving: Decimal | None = Field(default=None, sa_column=Column(Numeric(7, 2), nullable=True))
     nutrition_per_serving: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     source_url: str | None = None
+
+
+class PantryItem(SQLModel, table=True):
+    __tablename__ = "pantry_items"  # type: ignore[assignment]
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_pantry_user_name"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(sa_column=Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False))
+    name: str
+    quantity: float = Field(sa_column=Column(Float, nullable=False))
+    unit: str = ""
+    added_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    )

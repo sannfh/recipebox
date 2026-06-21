@@ -32,3 +32,11 @@ class ForbiddenError(AppError):
 
 class RecipeImportError(AppError):
     pass
+
+
+class PantryItemNotFoundError(NotFoundError):
+    pass
+
+
+class DuplicatePantryItemError(ConflictError):
+    pass
