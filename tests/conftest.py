@@ -5,8 +5,18 @@ os.environ.setdefault("APP_SECRET_KEY", "test-secret-key-not-for-production")
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from recipebox.core.cache import InMemoryCache
 from recipebox.core.embeddings import Embedder
-from recipebox.deps import get_embedder, get_pantry_repo, get_recipe_repo, get_reference_recipe_repo, get_user_repo
+from recipebox.core.rate_limit import AlwaysAllow, RateLimiter
+from recipebox.deps import (
+    get_cache,
+    get_embedder,
+    get_pantry_repo,
+    get_rate_limiter,
+    get_recipe_repo,
+    get_reference_recipe_repo,
+    get_user_repo,
+)
 from recipebox.main import app
 from recipebox.repositories.memory import (
     InMemoryPantryRepository,
@@ -40,15 +50,21 @@ async def client() -> AsyncClient:
     pantry_repo = InMemoryPantryRepository()
     reference_repo = InMemoryReferenceRecipeRepository()
     embedder = StubEmbedder()
+    cache = InMemoryCache()
+    limiter: RateLimiter = AlwaysAllow()
     app.dependency_overrides[get_user_repo] = lambda: user_repo
     app.dependency_overrides[get_recipe_repo] = lambda: recipe_repo
     app.dependency_overrides[get_pantry_repo] = lambda: pantry_repo
     app.dependency_overrides[get_reference_recipe_repo] = lambda: reference_repo
     app.dependency_overrides[get_embedder] = lambda: embedder
+    app.dependency_overrides[get_cache] = lambda: cache
+    app.dependency_overrides[get_rate_limiter] = lambda: limiter
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         ac.reference_repo = reference_repo  # type: ignore[attr-defined]  # let tests seed it
         ac.embedder = embedder  # type: ignore[attr-defined]
+        ac.cache = cache  # type: ignore[attr-defined]
+        ac.set_rate_limiter = lambda new: app.dependency_overrides.update({get_rate_limiter: lambda: new})  # type: ignore[attr-defined]
         yield ac
 
     app.dependency_overrides.clear()

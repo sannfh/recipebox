@@ -10,6 +10,7 @@ from recipebox.domain.schemas import (
     Recipe,
     RecipeCreate,
     RecipeUpdate,
+    ReferenceRecipeDetail,
     ReferenceRecipeHit,
     TagCount,
     UserInDB,
@@ -50,6 +51,9 @@ class UserRepository(ABC):
 class ReferenceRecipeRepository(ABC):
     @abstractmethod
     async def search_by_vector(self, query_vec: list[float], top_k: int) -> list[ReferenceRecipeHit]: ...
+
+    @abstractmethod
+    async def get_detail(self, recipe_id: int) -> ReferenceRecipeDetail | None: ...
 
 
 class PantryRepository(ABC):

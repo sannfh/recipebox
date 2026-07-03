@@ -40,6 +40,25 @@ wheels = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.111.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "docstring-parser" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/8a/9afc7305a2ce4b52b30e137f83cd2a6a90b918b3997073db11bb5a1de55a/anthropic-0.111.0.tar.gz", hash = "sha256:39cbda0ac17a6d423e5bf609811bd69b26eddf6299d7a468126e05bc711ce826", size = 934001, upload-time = "2026-06-18T17:31:44.733Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/bb/09e82a81885d787f350fb55ca9df865b63140dd28b3b5b3104c4ae261657/anthropic-0.111.0-py3-none-any.whl", hash = "sha256:c14edb36ed80da9099acbd26b5cec810d76606c31f32a0d56a4cf9d4fa9e25ae", size = 929774, upload-time = "2026-06-18T17:31:43.116Z" },
+]
+
+[[package]]
 name = "anyio"
 version = "4.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -330,6 +349,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8c/8b/57666417c0f90f08bcafa776861060426765fdb422eb10212086fb811d26/dnspython-2.8.0.tar.gz", hash = "sha256:181d3c6996452cb1189c4046c61599b84a5a86e099562ffde77d26984ff26d0f", size = 368251, upload-time = "2025-09-07T18:58:00.022Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/5a/18ad964b0086c6e62e2e7500f7edc89e3faa45033c71c1893d34eed2b2de/dnspython-2.8.0-py3-none-any.whl", hash = "sha256:01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af", size = 331094, upload-time = "2025-09-07T18:57:58.071Z" },
+]
+
+[[package]]
+name = "docstring-parser"
+version = "0.18.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/4d/f332313098c1de1b2d2ff91cf2674415cc7cddab2ca1b01ae29774bd5fdf/docstring_parser-0.18.0.tar.gz", hash = "sha256:292510982205c12b1248696f44959db3cdd1740237a968ea1e2e7a900eeb2015", size = 29341, upload-time = "2026-04-14T04:09:19.867Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a7/5f/ed01f9a3cdffbd5a008556fc7b2a08ddb1cc6ace7effa7340604b1d16699/docstring_parser-0.18.0-py3-none-any.whl", hash = "sha256:b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b", size = 22484, upload-time = "2026-04-14T04:09:18.638Z" },
 ]
 
 [[package]]
@@ -1477,6 +1505,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "anthropic" },
     { name = "asyncpg" },
     { name = "fastapi", extra = ["standard"] },
     { name = "httpx" },
@@ -1489,6 +1518,7 @@ dependencies = [
     { name = "pyjwt" },
     { name = "python-multipart" },
     { name = "recipe-scrapers" },
+    { name = "redis" },
     { name = "sqlmodel" },
     { name = "truststore" },
     { name = "uvicorn", extra = ["standard"] },
@@ -1508,6 +1538,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.18.4" },
+    { name = "anthropic", specifier = ">=0.40.0" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "fastapi", extras = ["standard"] },
     { name = "httpx" },
@@ -1521,6 +1552,7 @@ requires-dist = [
     { name = "pyjwt" },
     { name = "python-multipart" },
     { name = "recipe-scrapers" },
+    { name = "redis", specifier = ">=5.2.0" },
     { name = "sqlmodel", specifier = ">=0.0.38" },
     { name = "truststore", specifier = ">=0.10.4" },
     { name = "uvicorn", extras = ["standard"] },
@@ -1535,6 +1567,15 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+]
+
+[[package]]
+name = "redis"
+version = "8.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/ae/ed461cca5780b5fc8b9fe8ca0ed98d89508645fb9d880c24cc42c087678f/redis-8.0.0.tar.gz", hash = "sha256:a00c5355432051ac14e593b8b197fc76c887ee12d55a0984f69328a1115fdc49", size = 5101591, upload-time = "2026-05-28T12:45:13.5Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/e3/b519734372d305bd547534a9f32e4ce9f98552af753dce72cf3483a0ff0b/redis-8.0.0-py3-none-any.whl", hash = "sha256:c938c18338585009f0bc310f4c7e4e4b4d37639356c4ac072cedf3af570c8dc7", size = 499870, upload-time = "2026-05-28T12:45:11.697Z" },
 ]
 
 [[package]]

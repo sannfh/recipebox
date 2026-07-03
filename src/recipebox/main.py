@@ -3,8 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from .api import auth, health, pantry, recipes, tags
-from .domain.errors import ConflictError, ForbiddenError, NotFoundError, RecipeImportError, UnauthorizedError
+from .api import agent, auth, health, pantry, recipes, tags
+from .domain.errors import (
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    RateLimitedError,
+    RecipeImportError,
+    UnauthorizedError,
+)
 
 
 @asynccontextmanager
@@ -19,6 +26,7 @@ app.include_router(auth.router)
 app.include_router(recipes.router)
 app.include_router(tags.router)
 app.include_router(pantry.router)
+app.include_router(agent.router)
 
 
 @app.exception_handler(NotFoundError)
@@ -44,3 +52,8 @@ async def forbidden_handler(request: Request, exc: ForbiddenError) -> JSONRespon
 @app.exception_handler(RecipeImportError)
 async def import_error_handler(request: Request, exc: RecipeImportError) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.exception_handler(RateLimitedError)
+async def rate_limited_handler(request: Request, exc: RateLimitedError) -> JSONResponse:
+    return JSONResponse(status_code=429, content={"detail": str(exc)})

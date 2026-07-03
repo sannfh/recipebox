@@ -12,6 +12,7 @@ from recipebox.domain.schemas import (
     Recipe,
     RecipeCreate,
     RecipeUpdate,
+    ReferenceRecipeDetail,
     ReferenceRecipeHit,
     TagCount,
     UserInDB,
@@ -154,11 +155,18 @@ class InMemoryReferenceRecipeRepository(ReferenceRecipeRepository):
 
     def __init__(self) -> None:
         self._store: list[tuple[ReferenceRecipeHit, list[float]]] = []
+        self._details: dict[int, ReferenceRecipeDetail] = {}
 
     def add(self, hit: ReferenceRecipeHit, vector: list[float]) -> None:
         self._store.append((hit, vector))
+
+    def add_detail(self, detail: ReferenceRecipeDetail) -> None:
+        self._details[detail.id] = detail
 
     async def search_by_vector(self, query_vec: list[float], top_k: int) -> list[ReferenceRecipeHit]:
         scored = [(hit.model_copy(update={"score": _cosine(query_vec, vec)}), vec) for hit, vec in self._store]
         scored.sort(key=lambda pair: pair[0].score, reverse=True)
         return [hit for hit, _ in scored[:top_k]]
+
+    async def get_detail(self, recipe_id: int) -> ReferenceRecipeDetail | None:
+        return self._details.get(recipe_id)

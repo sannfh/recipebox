@@ -107,6 +107,42 @@ class ReferenceRecipeHit(BaseModel):
     score: float  # cosine similarity, 1.0 = identical
 
 
+class ReferenceRecipeDetail(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    ingredients: list[str]
+    instructions: list[str]
+    url: str
+    source_site: str | None
+    cuisine: str | None
+    category: str | None
+    servings: str | None
+    image_url: str | None
+
+
+class AgentMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class AgentToolCall(BaseModel):
+    tool: str
+    input: dict
+    output: object  # JSON-serializable tool result
+
+
+class AgentChatRequest(BaseModel):
+    message: str
+    history: list[AgentMessage] = []
+
+
+class AgentChatResponse(BaseModel):
+    reply: str
+    citations: list[int]  # reference_recipe ids surfaced via tools — verifiable
+    steps: list[AgentToolCall]
+
+
 class PantryItemBase(BaseModel):
     name: str
     quantity: float = Field(ge=0)

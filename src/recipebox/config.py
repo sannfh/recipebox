@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     database_url: str = ""
     openai_api_key: str = ""
     embedding_model: str = "text-embedding-3-small"
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-6"
+    redis_url: str = ""
+    agent_rate_limit_per_minute: int = 30
 
 
 settings = Settings()  # type: ignore[call-arg]

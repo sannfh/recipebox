@@ -40,3 +40,7 @@ class PantryItemNotFoundError(NotFoundError):
 
 class DuplicatePantryItemError(ConflictError):
     pass
+
+
+class RateLimitedError(AppError):
+    pass

@@ -10,3 +10,7 @@ dist/
 resources/
 memory/
 CONTEXT.md
+
+# Claude Code runtime artifacts
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

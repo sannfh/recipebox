@@ -15,6 +15,16 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   app:
     build: .
     ports:
@@ -23,8 +33,12 @@ services:
       APP_DATABASE_URL: postgresql+asyncpg://recipebox_user:${DB_PASSWORD}@db/recipebox
       APP_SECRET_KEY: ${APP_SECRET_KEY}
       APP_OPENAI_API_KEY: ${APP_OPENAI_API_KEY}
+      APP_ANTHROPIC_API_KEY: ${APP_ANTHROPIC_API_KEY}
+      APP_REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

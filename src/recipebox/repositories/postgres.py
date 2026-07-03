@@ -13,12 +13,14 @@ from recipebox.domain.schemas import (
     Recipe,
     RecipeCreate,
     RecipeUpdate,
+    ReferenceRecipeDetail,
     ReferenceRecipeHit,
     TagCount,
     UserInDB,
 )
 from recipebox.models import PantryItem as PantryItemModel
 from recipebox.models import Recipe as RecipeModel
+from recipebox.models import ReferenceRecipe as ReferenceRecipeModel
 from recipebox.models import User as UserModel
 from recipebox.repositories.base import (
     PantryRepository,
@@ -243,3 +245,21 @@ class PostgresReferenceRecipeRepository(ReferenceRecipeRepository):
                 )
             )
         return hits
+
+    async def get_detail(self, recipe_id: int) -> ReferenceRecipeDetail | None:
+        row = await self.session.get(ReferenceRecipeModel, recipe_id)
+        if row is None:
+            return None
+        return ReferenceRecipeDetail(
+            id=row.id,  # type: ignore[arg-type]
+            title=row.title,
+            description=row.description,
+            ingredients=row.ingredients,
+            instructions=row.instructions,
+            url=row.url,
+            source_site=row.source_site,
+            cuisine=row.cuisine,
+            category=row.category,
+            servings=row.servings,
+            image_url=row.image_url,
+        )
