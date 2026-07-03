@@ -15,10 +15,11 @@ from __future__ import annotations
 import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import truststore
 from anthropic import AsyncAnthropic
+from anthropic.types import MessageParam, ToolParam, ToolResultBlockParam
 
 from recipebox.config import settings
 from recipebox.domain.schemas import AgentChatResponse, AgentMessage, AgentToolCall
@@ -58,12 +59,18 @@ class Tool:
     cites_recipes: bool = False  # if True, scrape ids from output for the citations list
 
 
-def _extract_recipe_ids(output: Any) -> list[int]:
+def _extract_recipe_ids(output: list[dict[str, Any]] | dict[str, Any]) -> list[int]:
     """Pull recipe ids out of a tool result so we can build the citations list."""
     if isinstance(output, list):
-        return [item["id"] for item in output if isinstance(item, dict) and "id" in item]
-    if isinstance(output, dict) and "id" in output:
-        return [output["id"]]
+        result: list[int] = []
+        for item in output:
+            value = item.get("id")
+            if isinstance(value, int):
+                result.append(value)
+        return result
+    value = output.get("id")
+    if isinstance(value, int):
+        return [value]
     return []
 
 
@@ -78,7 +85,7 @@ class Agent:
         return [t.schema for t in self._tools.values()]
 
     async def chat(self, user_message: str, history: list[AgentMessage]) -> AgentChatResponse:
-        messages: list[dict[str, Any]] = [
+        messages: list[MessageParam] = [
             *({"role": h.role, "content": h.content} for h in history),
             {"role": "user", "content": user_message},
         ]
@@ -92,7 +99,7 @@ class Agent:
                 model=self._model,
                 max_tokens=MAX_TOKENS,
                 system=SYSTEM_PROMPT,
-                tools=self._tool_schemas,
+                tools=cast(list[ToolParam], self._tool_schemas),
                 messages=messages,
                 cache_control={"type": "ephemeral"},
             )
@@ -132,7 +139,7 @@ class Agent:
                     {"type": "tool_result", "tool_use_id": use.id, "content": json.dumps(output, default=str)}
                 )
 
-            messages.append({"role": "user", "content": tool_results})
+            messages.append({"role": "user", "content": cast(list[ToolResultBlockParam], tool_results)})
 
         # Loop hit its ceiling — give up gracefully.
         return AgentChatResponse(

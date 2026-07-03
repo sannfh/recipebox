@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field, computed_field, field_validator
 
@@ -128,7 +128,7 @@ class AgentMessage(BaseModel):
 
 class AgentToolCall(BaseModel):
     tool: str
-    input: dict
+    input: dict[str, Any]
     output: object  # JSON-serializable tool result
 
 

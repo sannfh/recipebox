@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Any
 
 import redis.asyncio as aioredis
 from anthropic import AsyncAnthropic
@@ -146,7 +146,7 @@ def get_agent(
     """Build a per-request Agent. Tool handlers are closures that bake in current_user.id
     so pantry access is automatically scoped to the authenticated user."""
 
-    async def _search_recipes(inp: dict) -> list[dict]:
+    async def _search_recipes(inp: dict[str, Any]) -> list[dict[str, Any]]:
         query = inp["query"]
         top_k = min(int(inp.get("top_k", 5)), 10)
         hits = await search_service.search(query=query, top_k=top_k)
@@ -155,11 +155,11 @@ def get_agent(
             for h in hits
         ]
 
-    async def _get_pantry(inp: dict) -> list[dict]:
+    async def _get_pantry(inp: dict[str, Any]) -> list[dict[str, Any]]:
         items = await pantry_service.list(user_id=current_user.id)
         return [{"name": i.name, "quantity": i.quantity, "unit": i.unit} for i in items]
 
-    async def _get_recipe_details(inp: dict) -> dict | None:
+    async def _get_recipe_details(inp: dict[str, Any]) -> dict[str, Any] | None:
         detail = await reference_repo.get_detail(int(inp["recipe_id"]))
         return detail.model_dump() if detail else None
 

@@ -23,7 +23,8 @@ from dataclasses import dataclass, field
 import redis.asyncio as aioredis
 
 from recipebox.core.embeddings import Embedder
-from recipebox.domain.schemas import ReferenceRecipeHit
+from recipebox.domain.schemas import ReferenceRecipeDetail, ReferenceRecipeHit
+from recipebox.repositories.base import ReferenceRecipeRepository
 
 DEFAULT_TTL_SECONDS = 30 * 24 * 60 * 60  # 30 days
 
@@ -41,7 +42,8 @@ class RedisCache(Cache):
         self._client = client
 
     async def get(self, key: str) -> bytes | None:
-        return await self._client.get(key)
+        value = await self._client.get(key)
+        return value if isinstance(value, bytes) else None
 
     async def set(self, key: str, value: bytes, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> None:
         await self._client.set(key, value, ex=ttl_seconds)
@@ -103,10 +105,10 @@ class TimedHits:
     elapsed_ms: float = field(default=0.0)
 
 
-class CachingSearchRepository:
+class CachingSearchRepository(ReferenceRecipeRepository):
     """Wraps any ReferenceRecipeRepository, caching (query_vec_hash, top_k) → hits."""
 
-    def __init__(self, inner, cache: Cache, stats: CacheStats | None = None) -> None:
+    def __init__(self, inner: ReferenceRecipeRepository, cache: Cache, stats: CacheStats | None = None) -> None:
         self._inner = inner
         self._cache = cache
         self.stats = stats or CacheStats()
@@ -124,7 +126,7 @@ class CachingSearchRepository:
         await self._cache.set(key, json.dumps([h.model_dump() for h in hits]).encode("utf-8"))
         return hits
 
-    async def get_detail(self, recipe_id):
+    async def get_detail(self, recipe_id: int) -> ReferenceRecipeDetail | None:
         return await self._inner.get_detail(recipe_id)
 
 

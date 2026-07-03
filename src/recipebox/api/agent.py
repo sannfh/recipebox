@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
@@ -25,7 +25,7 @@ async def chat(
 
 
 @router.get("/cache-stats")
-async def cache_stats() -> dict:
+async def cache_stats() -> dict[str, Any]:
     """Cumulative hit/miss counts since process start. Used by the benchmark."""
     return {
         "embeddings": {"hits": EMBED_STATS.hits, "misses": EMBED_STATS.misses, "hit_rate": EMBED_STATS.hit_rate},
