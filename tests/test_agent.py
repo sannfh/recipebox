@@ -1,3 +1,5 @@
+import json
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from httpx import AsyncClient
@@ -24,21 +26,54 @@ class _Response:
     stop_reason: str
 
 
+class _StubStream:
+    """Async-context-manager stand-in for client.messages.stream(...).
+
+    text_stream replays each response's text blocks as chunks; get_final_message
+    returns the whole scripted response (for the stop_reason / tool_use decision).
+    """
+
+    def __init__(self, response: _Response) -> None:
+        self._response = response
+
+    async def __aenter__(self) -> "_StubStream":
+        return self
+
+    async def __aexit__(self, *exc: object) -> bool:
+        return False
+
+    @property
+    def text_stream(self) -> AsyncIterator[str]:
+        return self._iter_text()
+
+    async def _iter_text(self) -> AsyncIterator[str]:
+        for block in self._response.content:
+            if block.type == "text" and block.text:
+                yield block.text
+
+    async def get_final_message(self) -> _Response:
+        return self._response
+
+
 class StubAnthropic:
     """Replays a scripted list of `_Response` objects in order.
 
-    Each call to `messages.create()` pops the next response. Tests script the
-    expected agent trajectory: tool use → tool use → end_turn.
+    Each call to `messages.create()` (or `messages.stream()`) pops the next response.
+    Tests script the expected agent trajectory: tool use → tool use → end_turn.
     """
 
     def __init__(self, scripted: list[_Response]) -> None:
         self._scripted = list(scripted)
         self.calls: list[dict] = []
-        self.messages = self  # client.messages.create(...) routes here
+        self.messages = self  # client.messages.create(...) / .stream(...) route here
 
     async def create(self, **kwargs) -> _Response:
         self.calls.append(kwargs)
         return self._scripted.pop(0)
+
+    def stream(self, **kwargs) -> _StubStream:
+        self.calls.append(kwargs)
+        return _StubStream(self._scripted.pop(0))
 
 
 # ---- helpers ----
@@ -196,3 +231,42 @@ class TestAgentChat:
         # Hit the cap (MAX_ITERATIONS=10), not the end of the script
         assert len(stub.calls) == 10
         assert "couldn't reach" in response.json()["reply"].lower()
+
+    async def test_stream_emits_step_token_and_done(self, client: AsyncClient) -> None:
+        token = await register_and_login(client)
+        stub = StubAnthropic(
+            [
+                _Response(
+                    content=[_Block(type="tool_use", name="search_recipes", id="t1", input={"query": "dinner"})],
+                    stop_reason="tool_use",
+                ),
+                _Response(content=[_Block(type="text", text="Try recipe #1.")], stop_reason="end_turn"),
+            ]
+        )
+        _override_agent(stub, client)
+
+        events: list[dict] = []
+        async with client.stream(
+            "POST", "/agent/chat/stream", json={"message": "what's for dinner"}, headers=auth(token)
+        ) as response:
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("text/event-stream")
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    events.append(json.loads(line.removeprefix("data: ")))
+
+        # A step event fires before the tool runs, tokens stream the final turn, done comes last.
+        assert events[-1]["type"] == "done"
+        step = next(e for e in events if e["type"] == "step")
+        assert step["tool"] == "search_recipes"
+        assert "".join(e["text"] for e in events if e["type"] == "token") == "Try recipe #1."
+        done = events[-1]
+        assert done["reply"] == "Try recipe #1."
+        assert sorted(done["citations"]) == [1, 2]  # search_recipes returned ids 1 and 2
+        assert len(done["steps"]) == 1
+
+    async def test_stream_requires_auth(self, client: AsyncClient) -> None:
+        stub = StubAnthropic([_Response(content=[_Block(type="text", text="x")], stop_reason="end_turn")])
+        _override_agent(stub, client)
+        response = await client.post("/agent/chat/stream", json={"message": "x"})
+        assert response.status_code == 401
