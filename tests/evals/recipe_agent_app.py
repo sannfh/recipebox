@@ -34,7 +34,7 @@ from recipebox.domain.schemas import AgentChatResponse
 from recipebox.domain.services import RecipeSearchService
 from recipebox.repositories.memory import InMemoryReferenceRecipeRepository
 from tests.evals.corpus import build_reference_repo
-from tests.evals.metrics import RETRIEVER_SPAN_METRICS
+from tests.evals.metrics import retriever_span_metrics
 
 # A fixed pantry so pantry-aware advice (substitutions, "what you're missing") is
 # actually exercised by the eval.
@@ -74,7 +74,7 @@ def _build_tools(
     in spans. Schemas are copied verbatim from deps.get_agent so Claude sees the
     exact same tool contract it sees in production."""
 
-    @observe(type="retriever", name="search_recipes", metrics=RETRIEVER_SPAN_METRICS)
+    @observe(type="retriever", name="search_recipes", metrics=retriever_span_metrics())
     async def _search(inp: dict[str, Any]) -> list[dict[str, Any]]:
         query = inp["query"]
         top_k = min(int(inp.get("top_k", 5)), 10)

@@ -36,9 +36,12 @@ uv run deepeval generate \
 ## Run the loop
 
 ```bash
-uv run deepeval test run tests/evals/test_recipe_agent.py \
+RUN_AGENT_EVALS=1 uv run deepeval test run tests/evals/test_recipe_agent.py \
   --skip-on-missing-params --identifier round-1
 ```
+
+`RUN_AGENT_EVALS=1` is required — without it the suite is skipped, so it never runs
+(and never bills the OpenAI/Anthropic APIs) during a normal `uv run pytest` or in CI.
 
 Read the per-metric scores and `reason` strings, find the lowest-scoring metric,
 make the smallest app change (prompt / tool wiring / retrieval), and rerun.

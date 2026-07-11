@@ -24,32 +24,41 @@ from deepeval.test_case import SingleTurnParams
 # The LLM-as-judge. gpt-4o balances judgment quality and cost for a first suite.
 JUDGE_MODEL = "gpt-4o"
 
-# Custom criterion for RecipeBox's headline guarantee: verifiable citations and
-# no invented recipes. There is no generic "correctness" metric — correctness is
-# domain-specific — so we spell it out as a GEval (the skill's default custom type).
-grounded_citations = GEval(
-    name="GroundedCitations",
-    criteria=(
-        "Judge whether the assistant grounds its recommendation. Every recipe it "
-        "recommends must be cited by a numeric id written like '(recipe #123)'. It "
-        "must NOT invent recipes, ingredients, or source URLs. A response that "
-        "recommends a dish without a numeric citation, or that names a recipe/URL "
-        "not tied to a cited id, should score low. Off-topic questions that it "
-        "politely redirects (no recommendation, no citation) should score high."
-    ),
-    evaluation_params=[SingleTurnParams.INPUT, SingleTurnParams.ACTUAL_OUTPUT],
-    model=JUDGE_MODEL,
-)
+# IMPORTANT: build metrics LAZILY (functions, not module-level instances). A GEval /
+# GPTModel constructor eagerly builds an OpenAI client and requires OPENAI_API_KEY —
+# so instantiating at import time would crash plain `pytest` *collection* in CI,
+# where no key is set and these evals aren't meant to run at all.
 
-# End-to-end metrics — evaluated against the trace via assert_test(golden=...).
-SINGLE_TURN_TRACE_METRICS = [
-    TaskCompletionMetric(model=JUDGE_MODEL),  # did it actually help the user pick a recipe?
-    AnswerRelevancyMetric(model=JUDGE_MODEL),  # is the reply on-topic for the request?
-    FaithfulnessMetric(model=JUDGE_MODEL),  # is the reply grounded in retrieved recipes (no hallucination)?
-    grounded_citations,  # RecipeBox-specific: cited, verifiable, invented nothing
-]
 
-# Component metric — attached to the search_recipes retriever span only.
-RETRIEVER_SPAN_METRICS = [
-    ContextualRelevancyMetric(model=JUDGE_MODEL),  # did semantic search return recipes relevant to the query?
-]
+def _grounded_citations() -> GEval:
+    """Custom criterion for RecipeBox's headline guarantee: verifiable citations and
+    no invented recipes. There is no generic "correctness" metric — correctness is
+    domain-specific — so we spell it out as a GEval (the skill's default custom type)."""
+    return GEval(
+        name="GroundedCitations",
+        criteria=(
+            "Judge whether the assistant grounds its recommendation. Every recipe it "
+            "recommends must be cited by a numeric id written like '(recipe #123)'. It "
+            "must NOT invent recipes, ingredients, or source URLs. A response that "
+            "recommends a dish without a numeric citation, or that names a recipe/URL "
+            "not tied to a cited id, should score low. Off-topic questions that it "
+            "politely redirects (no recommendation, no citation) should score high."
+        ),
+        evaluation_params=[SingleTurnParams.INPUT, SingleTurnParams.ACTUAL_OUTPUT],
+        model=JUDGE_MODEL,
+    )
+
+
+def single_turn_trace_metrics() -> list:
+    """End-to-end metrics — evaluated against the trace via assert_test(golden=...)."""
+    return [
+        TaskCompletionMetric(model=JUDGE_MODEL),  # did it actually help the user pick a recipe?
+        AnswerRelevancyMetric(model=JUDGE_MODEL),  # is the reply on-topic for the request?
+        FaithfulnessMetric(model=JUDGE_MODEL),  # is the reply grounded in retrieved recipes?
+        _grounded_citations(),  # RecipeBox-specific: cited, verifiable, invented nothing
+    ]
+
+
+def retriever_span_metrics() -> list:
+    """Component metric — attached to the search_recipes retriever span only."""
+    return [ContextualRelevancyMetric(model=JUDGE_MODEL)]  # did search return relevant recipes?

@@ -11,13 +11,14 @@ scores the trace with the end-to-end metrics. The retriever-span metric
 span. Goldens come from ``deepeval generate`` (see tests/evals/README.md).
 """
 
+import os
 from pathlib import Path
 
 import pytest
 from deepeval import assert_test
 from deepeval.dataset import EvaluationDataset, Golden
 
-from tests.evals.metrics import SINGLE_TURN_TRACE_METRICS
+from tests.evals.metrics import single_turn_trace_metrics
 from tests.evals.recipe_agent_app import citations_grounded, run_recipe_agent
 
 _DATASET_PATH = Path(__file__).parent / "dataset.json"
@@ -26,10 +27,16 @@ dataset = EvaluationDataset()
 if _DATASET_PATH.exists():
     dataset.add_goldens_from_json_file(file_path=str(_DATASET_PATH))
 
+# These evals call the REAL OpenAI + Anthropic APIs (money + latency), so they must
+# NOT run in the default `uv run pytest` / CI. Opt in explicitly with RUN_AGENT_EVALS=1,
+# which `deepeval test run` invocations set (see README). Metrics are built lazily
+# inside the test so plain collection never needs an API key.
+_OPTED_IN = os.environ.get("RUN_AGENT_EVALS", "").lower() in {"1", "true", "yes"}
+
 
 @pytest.mark.skipif(
-    not dataset.goldens,
-    reason="No goldens. Run `uv run deepeval generate` to create tests/evals/dataset.json (see README).",
+    not (_OPTED_IN and dataset.goldens),
+    reason="Agent evals are opt-in: set RUN_AGENT_EVALS=1 and generate tests/evals/dataset.json (see README).",
 )
 @pytest.mark.parametrize("golden", dataset.goldens)
 async def test_recipe_agent(golden: Golden) -> None:
@@ -40,5 +47,5 @@ async def test_recipe_agent(golden: Golden) -> None:
     # subjective score, so it's a plain assert rather than a metric.
     assert citations_grounded(response), "agent cited a recipe id no tool ever returned"
 
-    # LLM-judged, end-to-end metrics scored against the trace.
-    assert_test(golden=golden, metrics=SINGLE_TURN_TRACE_METRICS)
+    # LLM-judged, end-to-end metrics scored against the trace (built lazily — needs a key).
+    assert_test(golden=golden, metrics=single_turn_trace_metrics())
