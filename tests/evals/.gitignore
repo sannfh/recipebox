@@ -1,0 +1,2 @@
+# eval embedding cache — regenerate with tests/evals/corpus.py
+.corpus_cache.json

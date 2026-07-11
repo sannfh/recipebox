@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+.mypy_cache/
 dist/
 *.egg-info/
 .ruff_cache/
@@ -14,3 +15,8 @@ CONTEXT.md
 # Claude Code runtime artifacts
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
+
+# DeepEval local run cache / telemetry
+.deepeval/
+.deepeval-cache.json
+.deepeval_telemetry.txt

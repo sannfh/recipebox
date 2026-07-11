@@ -62,4 +62,5 @@ dev = [
     "httpx",
     "pre-commit>=4.6.0",
     "asyncpg-stubs>=0.31.2",
+    "deepeval>=4.0.9",
 ]
